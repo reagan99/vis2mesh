@@ -11,7 +11,8 @@ This is the offical repository of the paper:
 
 Conda 파이썬 3.8로 설치 및 아래 작업은 전부 conda 환경 내에서 진행 - 패키지 설치 포함
 
-파일 명시 이름 변경: find . -type f -exec sed -i 's/sxsong1207/(본인 아이디)/g' {} +
+파일 명시 이름 변경: 
+	find . -type f -exec sed -i 's/sxsong1207/(본인 아이디)/g' {} +
 
 
   
