@@ -6,98 +6,110 @@ This is the offical repository of the paper:
 
 [ICCV](https://openaccess.thecvf.com/content/ICCV2021/html/Song_Vis2Mesh_Efficient_Mesh_Reconstruction_From_Unstructured_Point_Clouds_of_Large_ICCV_2021_paper.html) | [Arxiv](https://arxiv.org/abs/2108.08378) | [Presentation](https://youtu.be/KN55e_q6llE?feature=shared)
 
-```
-@InProceedings{Song_2021_ICCV,
-    author    = {Song, Shuang and Cui, Zhaopeng and Qin, Rongjun},
-    title     = {Vis2Mesh: Efficient Mesh Reconstruction From Unstructured Point Clouds of Large Scenes With Learned Virtual View Visibility},
-    booktitle = {Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
-    month     = {October},
-    year      = {2021},
-    pages     = {6514-6524}
-}
-```
+# 다음 순서로 진행
+#### 깃 클론 위치는 home/{계정명}/ 이라고 가정
 
-##### Updates
+Conda 파이썬 3.8로 설치 및 아래 작업은 전부 conda 환경 내에서 진행 - 패키지 설치 포함
 
-- 2021/9/6: Intialize all in one project. Only this version only supports inferencing with our pre-trained weights. We will release Dockerfile to relief deploy efforts.
+파일 명시 이름 변경: find . -type f -exec sed -i 's/sxsong1207/(본인 아이디)/g' {} +
 
-##### TODO
 
-- Ground truth generation and network training.
-- Evaluation scripts
+  
+## 라이브러리 설치 
+Conan ==1.53.0으로 설치 - Conan 프로필 생성 (여러 사용자가 접근 시 오류 발생 하는 것 같음)
 
-#### Build With Docker (Recommended)
+Matplotlib 3.5로 설치
 
-##### Install nvidia-docker2
+Opencv 설치 후 환경변수 설정
 
-```bash
-# Add the package repositories
-distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
-curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
 
-sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
-sudo systemctl restart docker
-```
+	export CPATH=/usr/local/include/opencv4:$CPATH
 
-##### Build docker image
+	export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
 
-`docker build . -t vis2mesh`
+	export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+Cuda 및 여러 설치:
 
-#### Build on Ubuntu
 
-Please create a conda environment with pytorch and check out our setup script:
+	conda install pytorch == 1.12.1 torchvision == 0.13.1 torchaudio == 0.12.1 cudatoolkit=10.2 -c pytorch
 
-`./setup_tools.sh`
-#### Usage
-##### Get pretrained weights and examples
 
-``` shell
-pip install gdown
-./checkpoints/get_pretrained.sh
-./example/get_example.sh
-```
-##### Run example
+Cudnn 설치 : 
 
-The main command for surface reconstruction, the result will be copied as `$(CLOUDFILE)_vis2mesh.ply`.
+	conda install -c anaconda cudnn
 
-`python inference.py example/example1.ply --cam cam0`
 
-We suggested to use docker, either in interactive mode or single shot mode.
+Cuda 툴킷 재설치 - 개발자용: 
 
-```bash
-xhost +
-name=vis2mesh
-# Run in interactive mode
-docker run -it \
---mount type=bind,source="$PWD/checkpoints",target=/workspace/checkpoints \
---mount type=bind,source="$PWD/example",target=/workspace/example \
---privileged \
---net=host \
--e NVIDIA_DRIVER_CAPABILITIES=all \
--e DISPLAY=unix$DISPLAY \
--v $XAUTH:/root/.Xauthority \
--v /tmp/.X11-unix:/tmp/.X11-unix:rw \
---device=/dev/dri \
---gpus all $name
+	conda install cudatoolkit=10.2 -c hcc
 
-cd /workspace
-python inference.py example/example1.ply --cam cam0
+  
 
-# Run with single shot call
-docker run \
---mount type=bind,source="$PWD/checkpoints",target=/workspace/checkpoints \
---mount type=bind,source="$PWD/example",target=/workspace/example \
---privileged \
---net=host \
--e NVIDIA_DRIVER_CAPABILITIES=all \
--e DISPLAY=unix$DISPLAY \
--v $XAUTH:/root/.Xauthority \
--v /tmp/.X11-unix:/tmp/.X11-unix:rw \
---device=/dev/dri \
---gpus all $name \
-/workspace/inference.py example/example1.ply --cam cam0
-```
+재부팅
+
+
+  
+# 빌드 진행
+## vvmesh
+Tools/build_vvmesh.sh 실행
+
+  
+
+
+
+  
+## openmvs
+Tools/build_openvms.sh 실행
+
+  
+
+Zlib 설치 링크 변경:
+
+  
+
+	find . -type f -exec sed -i 's|http://zlib.net/zlib-1.2.11.tar.gz|http://zlib.net/zlib-1.3.1.tar.gz|g' {} +
+
+  
+
+Tools/build_vvmwsh.sh 재실행 
+(한번 openmvs.sh를 실행해 줘야지 링크를 변경 할 수 있고 이후 정상 설치 가능)
+
+ ## 실행 파일 수정
+
+Inference.py, model폴더 내에 있는 파이썬 파일 (cascademodel.py, vvvnet.py) 
+tools/lib폴더 내 있는 파이썬 파일 (network_predict.py, hpr_predict.py) 상단에 다음 코드 추가. (깃 클론 위치)
+
+
+	import sys 
+	sys.path.append('/home/{계정명}/vis2mesh/')
+
+  
+
+### 예제파일 및 가중치 다운로드
+
+	./checkpoints/get_pretrained.sh
+	./example/get_example.sh
+
+### Inference.py의 findToolset 함수 부분에서 빌드한 도구 직접 경로 명시 
+
+	def  findToolset(dep_tools  = ['vvtool','o3d_vvcreator.py','ReconstructMesh']):
+		Toolset=dict()
+		print('#Available Toolset#')
+		for t in dep_tools:
+			Toolset['vvtool'] =  '/home/{계정명}/vis2mesh/tools/bin/vvtool'
+			Toolset['o3d_vvcreator.py'] =  '/home/{계정명}/vis2mesh/tools/bin/o3d_vvcreator.py'
+			Toolset['ReconstructMesh'] =  '/home/{계정명}/vis2mesh/tools/bin/OpenMVS/ReconstructMesh'
+			assert(Toolset[t]!=None)
+		print(f'{t}: {Toolset[t]}')
+		return Toolset
+	
+### 가중치 파일 위치 갱신
+inference.py 에서 --checkpoint 부분에서 지정하고 있는 가중치 파일 위치 갱신
+ 	
+	visgroup.add_argument('--checkpoint',default='/home/{계정명}/vis2mesh/checkpoints/VDVNet_CascadePPP_epoch30.pth',type=str)
+	
+## 실행
+이후 inferencr.py 실행. 단, --cam 옵션 없이 줄 시 xhost, GLSL 등의 문제로 직접 서버에 모니터를 연결해서 해야함 (원격 데스크 톱 불가능, 다른 방법이 있을 수는 있음)
 
 ##### Run with Customize Views
 
